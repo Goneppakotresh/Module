@@ -1,0 +1,160 @@
+﻿@model IEMS_WEB.Areas.BrandOwnerShip.Models.Response.ListBrandOwnerShip
+
+@{
+    ViewData["Title"] = "BrandOwnershipGrid";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@Html.Raw(TempData["Alert"])
+<div class="page-title">
+    <div class="row">
+        <div class="col-12">
+            <h3>
+                <span data-translate="">Brand Owners Details</span>
+                <button type="button" id="btnNew" class="btn btn-success pull-right" data-translate="New"><i class="fa fa-plus"></i> New</button>
+
+            </h3>
+        </div>
+    </div>
+</div>
+<table id="grChallanMstView" style="width:100%" class="table display table-boardered">
+
+    <thead>
+        <tr style="text-align: center;">
+            <th style="text-align: center">S.No</th>
+            <th style="text-align: center; display:none">Brand OwnerShip Id</th>
+            <th style="text-align: center">Unit Name</th>
+            <th style="text-align: center">Brand Name</th>
+            <th style="text-align: center">Packing</th>
+            <th style="text-align: center">Modified On</th>
+            <th style="text-align: center">Active/Deactive</th>
+
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.lstBrandOwnership != null)
+        {
+            int i = 1;
+            @foreach (var itm in Model.lstBrandOwnership)
+            {
+
+                <tr>
+                    <td style="text-align: center">@i</td>
+                    <td style="text-align: center;display:none">@itm.BrandOwnershipId</td>
+                    <td style="text-align: center">@itm.UnitName</td>
+                    <td style="text-align: center">@itm.BrandName</td>
+                    <td style="text-align: center">@itm.PackingName</td>
+                    <td style="text-align: center">@itm.CreatedOn</td>
+                    <td style="text-align: center">
+                        @{
+                            string toggleColor = itm.IsActive == 1 ? "green" : "red";
+                            string toggleText = itm.IsActive == 1 ? "Active" : "Inactive";
+                            int toggleValue = itm.IsActive == 1 ? 0 : 1;
+                        }
+
+                        <label class="switch" title="@toggleText">
+                            <input type="checkbox" class="isActiveToggle" data-role-id="@itm.BrandOwnershipId" data-toggle-value="@toggleValue" @(itm.IsActive == 1 ? "checked" : "") onchange="activeDeactiveToggle(this)">
+                            <span class="slider round" style="background-color: @toggleColor;"></span>
+                        </label>
+                    </td>
+                </tr>
+
+                i++;
+            }
+        }
+    </tbody>
+</table>
+
+<script>
+    $(document).ready(function () {
+
+        $("#grChallanMstView").DataTable();
+
+    });
+</script>
+<script>
+
+    function activeDeactiveToggle(checkbox) {
+        debugger;
+        var RoleId = checkbox.dataset.roleId;
+        var toggleValue = checkbox.dataset.toggleValue;
+
+        activeDeactive(RoleId, toggleValue);
+    }
+    function activeDeactive(RoleId, toggleValue) {
+
+
+        var flag = toggleValue;
+        if (flag == 0) {
+            Swal.fire({
+                title: 'Are You Sure You Want to Deactivate',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Confirm',
+                cancelButtonText: 'Cancel',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        type: "POST",
+                        url: "../BrandOwnership/ActiveDeactive",
+                        data: { RoleId: RoleId, flag: flag },
+                        success: function (data) {
+                            swal("Deactivated Successfully", {
+                                icon: "success",
+                            }).then(() => {
+                                window.location.href = "../BrandOwnership/BrandOwnershipGrid";
+                            });
+                        },
+                        error: function (xhr, status, error) {
+                            swal("Error", "An error occurred while processing.", "error");
+                        }
+                    });
+
+                } else {
+                    return false;
+                }
+            });
+        }
+        if (flag != 0) {
+            Swal.fire({
+                title: 'Are You Sure You Want to Activate',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Confirm',
+                cancelButtonText: 'Cancel',
+            }).then((result) => {
+                if (result.isConfirmed) {
+
+                    $.ajax({
+                        type: "POST",
+                        url: "../BrandOwnership/ActiveDeactive",
+                        data: { RoleId: RoleId, flag: flag },
+                        success: function (data) {
+                            swal({
+                                title: "Activated Successfully",
+                                icon: "success",
+                            }).then(() => {
+                                window.location.href = "../BrandOwnership/BrandOwnershipGrid";
+                            });
+                        },
+                        error: function (xhr, status, error) {
+                            swal({
+                                title: "Error",
+                                text: "An error occurred while processing.",
+                                icon: "error",
+                            });
+                        }
+                    });
+
+                } else {
+                    return false;
+                }
+            });
+        }
+    }
+
+
+
+    $("#btnNew").click(function () {
+        window.location.href = "/BrandOwnerShip/BrandOwnership/BrandOwnership";
+    })
+</script>

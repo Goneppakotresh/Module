@@ -1,0 +1,345 @@
+﻿@model IEMS_WEB.Areas.BrandOwnerShip.Models.Response.ListBrandOwnerShip
+@{
+    ViewData["Title"] = "BrandOwnership";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.20.0/jquery.validate.min.js" integrity="sha512-WMEKGZ7L5LWgaPeJtw9MBM4i5w5OSBlSjTjCtSnvFJGSVD26gE5+Td12qN5pvWXhuWaWcVwF++F7aqu9cvqP0A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js" integrity="sha512-xq+Vm8jC94ynOikewaQXMEkJIOBp7iArs3IhFWSWdRT3Pq8wFz46p+ZDFAR7kHnSFf+zUv52B3prRYnbDRdgog==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+@Html.Raw(TempData["Alert"])
+@using (Html.BeginForm())
+{
+    <div class="page-title">
+        <div class="row">
+            <div class="col-12">
+                <h3>
+                    <span data-translate="">Brand Mapping with Unit</span><button class="btn btn-primary pull-right" id="btnBack">Back</button>
+                </h3>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label mandatory" data-translate="">Fin Year</label>
+                @Html.DropDownListFor(m => m.model.FinYearId, (List<SelectListItem>)ViewBag.ddlYearList, new { @class = "dropdown form-control", id = "FinYearId" })
+                @Html.ValidationMessageFor(m => m.model.FinYear, "", new { @class = "text-danger validation-message" })
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label mandatory" data-translate="">Supplier Name</label>
+               
+
+                @Html.DropDownListFor(model => model.model.LicenseeId, (List<SelectListItem>)ViewBag.Licenseelist, new { @class = "form-control", id = "hdnRegId" })
+                <span class="error-message" id="errorddllicensee"></span>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label class="form-label mandatory" data-translate="">Brand  </label>
+                @Html.DropDownListFor(m => m.model.BrandId, (List<SelectListItem>)ViewBag.ddlBrandName, new { @class = "dropdown form-control", id = "brandNameId" })
+                @Html.ValidationMessageFor(m => m.model.BrandId, "", new { @class = "text-danger validation-message", id = "errBrandNameId" })
+            </div>
+        </div>
+       
+    </div>
+    @*  <div class="text-center">
+        <button type="submit" id="btnSubmit" value="Save" class="btn btn-success">Save</button>
+    </div> *@
+    <table id="grChallanMstView" style="width:100%" class="table display table-boardered">
+        <thead>
+            <tr style="text-align: center;">
+                <th style="text-align: center">Unit Name</th>
+                <th style="text-align: center ;display:none">Brand Name</th>
+                <th style="text-align: center">Packing</th>
+                <th style="text-align: center">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr id="row1">
+                <td style="text-align: center">
+                    @Html.DropDownListFor(model => model.model.UnitId, (List<SelectListItem>)ViewBag.ddlUnitName, new { @class = "dropdown form-control", id = "unitNameId1" })
+                </td>
+                <td style="text-align:center;display:none">
+                    @Html.DropDownListFor(model => model.model.BrandId, (List<SelectListItem>)ViewBag.ddlBrandName, new { @class = "dropdown form-control", id = "brandNameId1" })
+                </td>
+                <td style="text-align: center">
+                    @Html.DropDownListFor(model => model.model.PackingId, (List<SelectListItem>)ViewBag.ddlpackingName, new { @class = "dropdown form-control packing-dropdown", id = "packingId1" })
+                </td>
+                <td style="text-align: center">
+                    <i class="fa fa-plus-circle" aria-hidden="true" onclick="addRow()"></i>
+                    <i class="fa fa-minus-circle" aria-hidden="true" onclick="removeRow('row1')"></i>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <div style="text-align:center">
+        <button type="button" id="btnSubmit" onclick="saveData()" class="btn btn-success">Save</button>
+    </div>
+
+}
+
+<script>
+
+    $(document).ready(function () {
+        $("#brandNameId").change(function () {
+            var selectedBrandId = $(this).val();
+            GetdropdownForPacking(selectedBrandId);
+
+        });
+        $("#FinYearId").change(function () {
+            var selectedBrandId = $(this).val();
+            $.ajax({
+                url: '@Url.Action("UnitNameForFinYear", "BrandOwnerShip")',
+                type: 'GET',
+                data: { finyear: selectedBrandId },
+                success: function (data) {
+                    $("#unitNameId1").html('')
+                    var s = '';
+                    var len = data.data.selectList.UnitNameDdlList.length;
+                    for (var i = 0; i < len; i++) {
+                        s += "<option value='" + data.data.selectList.UnitNameDdlList[i]["Value"] + "'>" + data.data.selectList.UnitNameDdlList[i]["Text"] + "</option>";
+                    }
+                    $('#unitNameId1').html(s).trigger("chosen:updated");
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            });
+
+        });
+
+        $(".packing-dropdown").change(function () {
+            var selectedValue = $(this).val();
+
+            // Disable the selected value in other dropdowns
+            $(".packing-dropdown").not(this).find("option").prop("disabled", false);
+            $(".packing-dropdown").not(this).find("option[value='" + selectedValue + "']").prop("disabled", true);
+        });
+    });
+
+
+    function GetdropdownForPacking(selectedBrandId) {
+        $.ajax({
+            url: '@Url.Action("BrandOwnershipForPacking", "BrandOwnerShip")',
+            type: 'GET',
+            data: { brandId: selectedBrandId },
+            success: function (data) {
+                $("#packingId1").html('')
+                var s = '';
+                var len = data.data.selectList.PackingNameDdlList.length;
+                for (var i = 0; i < len; i++) {
+                    s += "<option value='" + data.data.selectList.PackingNameDdlList[i]["Value"] + "'>" + data.data.selectList.PackingNameDdlList[i]["Text"] + "</option>";
+                }
+                $('#packingId1').html(s).trigger("chosen:updated");
+            },
+            error: function (error) {
+                console.error(error);
+            }
+        });
+    }
+    $(document).on('change', '.packing-dropdown', function () {
+        var id = $(this).attr("id");
+        var value = $(this).val();
+
+
+    });
+
+
+
+    var counter = 1;
+    var dropdownValuesArray = []; // Global array to store dropdown values
+
+    async function addRow() {
+        var tableBody = document.querySelector('#grChallanMstView tbody');
+        var originalRow = document.getElementById('row' + counter);
+
+        var unitDropdown = originalRow.querySelector('#unitNameId' + counter);
+        var brandDropdown = originalRow.querySelector('#brandNameId' + counter);
+        var packingDropdown = originalRow.querySelector('#packingId' + counter);
+
+
+        if (unitDropdown.value === "0" || packingDropdown.value === "0" ||
+            unitDropdown.value === "" || packingDropdown.value === "") {
+            alert("Please select values for all dropdowns.");
+            return;
+        }
+
+
+        if (isDuplicate(unitDropdown.value, brandDropdown.value, packingDropdown.value)) {
+            alert("Duplicate values are not allowed.");
+            packingDropdown.value = 0;
+            unitDropdown.value = 0;
+            return;
+        }
+
+
+        dropdownValuesArray.push({
+            unit: unitDropdown.value,
+            brand: brandDropdown.value,
+            packing: packingDropdown.value
+        });
+
+        var newRow = originalRow.cloneNode(true);
+        counter++;
+        newRow.id = 'row' + counter;
+        newRow.querySelector('#unitNameId' + (counter - 1)).id = 'unitNameId' + counter;
+        newRow.querySelector('#brandNameId' + (counter - 1)).id = 'brandNameId' + counter;
+        newRow.querySelector('#packingId' + (counter - 1)).id = 'packingId' + counter;
+        var previousDropdown = originalRow.querySelector('#packingId' + (counter - 1));
+        var selectedValue = previousDropdown.value;
+
+        var newDropdown = newRow.querySelector('#packingId' + counter);
+
+        // Enable all options in the new packaging dropdown
+        for (var i = 0; i < newDropdown.options.length; i++) {
+            newDropdown.options[i].disabled = false;
+        }
+
+        function isDuplicate(unit, brand, packing) {
+
+            for (var i = 0; i < dropdownValuesArray.length; i++) {
+                if (dropdownValuesArray[i].unit === unit &&
+                    dropdownValuesArray[i].brand === brand &&
+                    dropdownValuesArray[i].packing === packing) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        var removeButton = newRow.querySelector('.fa-minus-circle');
+        removeButton.setAttribute('onclick', 'removeRow("' + newRow.id + '")');
+        tableBody.appendChild(newRow);
+
+        previousDropdown.disabled = true;
+    }
+
+
+    function removeRow(rowId) {
+        var tableBody = document.querySelector('#grChallanMstView tbody');
+        var rowToRemove = document.getElementById(rowId);
+        var previousRowId = 'row' + (counter - 1);
+        var previousRow = document.getElementById(previousRowId);
+        dropdownValuesArray.pop();
+        counter--;
+
+        var rowCount = document.querySelectorAll('#grChallanMstView tbody tr').length;
+        if (rowCount > 1) {
+            tableBody.removeChild(rowToRemove);
+
+
+            if (previousRow) {
+                var previousDropdown = previousRow.querySelector('#packingId' + counter);
+                if (previousDropdown) {
+                    previousDropdown.disabled = false;
+                }
+            }
+        } else {
+            alert("Cannot remove the last row.");
+        }
+    }
+    function saveData() {
+       debugger
+        var rows = document.querySelectorAll('#grChallanMstView tbody tr');
+        var dataToSend = [];
+        var seenData = {}; // To track duplicate data
+        var abc = false;
+        var counter = 1;
+        rows.forEach(function (row) {
+            var finYearId = $("#FinYearId").val();
+
+            var brandId = $("#brandNameId").val();
+
+            var tableBody = document.querySelector('#grChallanMstView tbody');
+            var originalRow = document.getElementById('row' + counter);
+
+            var unitDropdown = originalRow.querySelector('#unitNameId' + counter);
+
+            var packingDropdown = originalRow.querySelector('#packingId' + counter);
+
+            var packingId = row.querySelector('select[id^="packingId"]').value;
+            var rowData = {
+                finYearId: finYearId,
+                brandId: brandId,
+                packingId: packingDropdown.value,
+               
+                LicenseeId: $('#hdnRegId').val(),
+                UnitId: unitDropdown.value
+            };
+         
+            
+            
+            if (finYearId == 0 || finYearId == undefined || brandId == 0 || brandId == undefined) {
+                alert("Please Select All DropDown");
+                return false; 
+
+            }
+            else {
+
+                if (unitDropdown.value === "0" || packingDropdown.value === "0" ||
+                    unitDropdown.value === "" || packingDropdown.value === "") {
+                    alert("Please select values for all dropdowns.");
+                    return;
+                }
+                else {
+                    dataToSend.push(rowData);
+                    console.log(dataToSend);
+                    abc = true;
+                }
+
+            }
+            counter = counter + 1;
+
+        });
+
+       
+
+
+        if (abc == true) {
+            Swal.fire({
+
+                text: 'Are you sure you want to Save',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'No'
+            }).then((result) => {
+                if (result.isConfirmed) {
+
+                    $.ajax({
+
+                        type: 'POST',
+                        url: '/BrandOwnership/BrandOwnership/SaveBrandOwnership',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            lstBrandOwnership: dataToSend
+
+                        }),
+                        success: function (response) {
+                            window.location.href = "/BrandOwnerShip/BrandOwnership/BrandOwnershipgrid";
+                        },
+                        error: function (error) {
+                            console.error('Error saving data:', error);
+                        }
+                    });
+                }
+                else {
+                    false;
+                }
+            });
+           
+        }
+       
+
+    }
+
+    $("#btnBack").click(function () {
+        window.location.href = "/BrandOwnerShip/BrandOwnership/BrandOwnershipgrid";
+    })
+
+ 
+
+</script>
